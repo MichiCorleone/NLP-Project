@@ -55,7 +55,7 @@ print("\nGesamtanzahl Reviews:", len(all_reviews))
 # 3a. Nur negative Bewertungen analysieren
 # ==========================================================
 
-# Reviews mit 1 oder 2 Sternen auswählen
+# Reviews mit 1 oder 2 Sternen auswählen oder Zahl verändern
 negative_reviews = df[df["rating"] <= 2]
 
 # Textspalte extrahieren

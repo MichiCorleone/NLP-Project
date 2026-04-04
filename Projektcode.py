@@ -152,4 +152,90 @@ print("LSA THEMEN")
 print("==============================")
 print_topics(lsa, tfidf_vectorizer.get_feature_names_out())
 
+# ==========================================================
+# 9. Vergleichsdiagramm LDA vs. LSA
+# ==========================================================
 
+import matplotlib.pyplot as plt  # Für Diagramme
+import numpy as np  # Für Positionierung der Balken
+
+# Funktion für direkten Vergleich
+def compare_topics(lda_model, lsa_model, lda_features, lsa_features, topic_index=0, top_n=10):
+    
+    # ---------------------------
+    # LDA-Daten vorbereiten
+    # ---------------------------
+    lda_topic = lda_model.components_[topic_index]
+    lda_indices = lda_topic.argsort()[-top_n:]
+    lda_words = [lda_features[i] for i in lda_indices]
+    lda_values = lda_topic[lda_indices]
+    
+    # ---------------------------
+    # LSA-Daten vorbereiten
+    # ---------------------------
+    lsa_topic = lsa_model.components_[topic_index]
+    lsa_indices = lsa_topic.argsort()[-top_n:]
+    lsa_words = [lsa_features[i] for i in lsa_indices]
+    lsa_values = lsa_topic[lsa_indices]
+    
+    # ---------------------------
+    # Diagramm erstellen
+    # ---------------------------
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+    
+    # LDA Diagramm
+    axes[0].barh(lda_words, lda_values)
+    axes[0].set_title(f"LDA Thema {topic_index + 1}")
+    axes[0].set_xlabel("Gewichtung")
+    
+    # LSA Diagramm
+    axes[1].barh(lsa_words, lsa_values)
+    axes[1].set_title(f"LSA Thema {topic_index + 1}")
+    axes[1].set_xlabel("Gewichtung")
+    
+    # Layout optimieren
+    plt.tight_layout()
+    plt.show()
+
+for i in range(5):
+    compare_topics(
+        lda,
+        lsa,
+        count_vectorizer.get_feature_names_out(),
+        tfidf_vectorizer.get_feature_names_out(),
+        topic_index=i,
+        top_n=10
+    )
+
+# ==========================================================
+# 10. Wordcloud der negativen Reviews
+# ==========================================================
+
+from wordcloud import WordCloud  # Wordcloud-Bibliothek
+import matplotlib.pyplot as plt  # Diagramme
+
+# Alle bereinigten negativen Texte zu einem langen Text verbinden
+all_negative_text = " ".join(cleaned_texts)
+
+# Wordcloud erstellen
+wordcloud = WordCloud(
+    width=1000,  # Bildbreite
+    height=500,  # Bildhöhe
+    background_color="white",  # Hintergrundfarbe
+    max_words=100  # Maximal 100 Wörter anzeigen
+).generate(all_negative_text)
+
+# Diagrammgröße
+plt.figure(figsize=(14, 7))
+
+# Wordcloud anzeigen
+plt.imshow(wordcloud, interpolation="bilinear")
+
+# Achsen ausblenden
+plt.axis("off")
+
+# Titel setzen
+plt.title("Wordcloud negativer WhatsApp-Reviews", fontsize=16)
+
+# Anzeigen
+plt.show()

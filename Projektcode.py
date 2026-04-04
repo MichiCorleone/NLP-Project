@@ -1,128 +1,155 @@
-# =========================
+# ==========================================================
 # 1. Bibliotheken importieren
-# =========================
+# ==========================================================
 
-import pandas as pd  # Für Datenverarbeitung (CSV laden etc.)
+import pandas as pd  # Für CSV-Dateien und Datenanalyse
 import re  # Für Textbereinigung mit regulären Ausdrücken
-import nltk  # Für NLP-Tools (Stopwords etc.)
-from nltk.corpus import stopwords  # Häufige Wörter entfernen
+import nltk  # NLP-Bibliothek
+from nltk.corpus import stopwords  # Häufige irrelevante Wörter
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer  # Vektorisierung
-from sklearn.decomposition import LatentDirichletAllocation  # LDA (Themenmodell)
-from sklearn.decomposition import NMF  # Alternative Themenanalyse
-import spacy  # Für fortgeschrittene Sprachverarbeitung
+from sklearn.decomposition import LatentDirichletAllocation  # LDA Themenmodell
+from sklearn.decomposition import TruncatedSVD  # LSA Themenmodell
 
-# Stopwords herunterladen (nur beim ersten Mal nötig)
-nltk.download('stopwords')
+# Stopwords laden (nur beim ersten Start notwendig)
+nltk.download("stopwords")
 
-# Spacy Modell laden
-nlp = spacy.load("en_core_web_sm")
+# ==========================================================
+# 2. CSV-Datei robust laden
+# ==========================================================
 
-# =========================
-# 2. CSV-Datei laden
-# =========================
-
-# Pfad zu deiner CSV-Datei (anpassen!)
-
+# Vollständiger Pfad zu deiner Datei
 file_path = r"C:\Users\hawk1\Dropbox\Uni\02 Projekt Data Analysis\Phyton Code\whatsapp_reviews.csv"
 
-# CSV laden
-df = pd.read_csv(file_path)
+# CSV robust laden
+df = pd.read_csv(
+    file_path,  # Dateipfad
+    encoding="utf-8",  # Richtige Zeichenkodierung
+    sep=",",  # Spaltentrenner
+    quotechar='"',  # Texte mit Kommas korrekt lesen
+    engine="python",  # Toleranter CSV-Parser
+    on_bad_lines="skip"  # Fehlerhafte Zeilen überspringen
+)
 
-# Annahme: Die Textspalte heißt "text" (falls anders, anpassen!)
-texts = df["text"]
+# Kontrollausgabe
+print("Datensatz erfolgreich geladen.")
+print("Anzahl Zeilen und Spalten:", df.shape)
+print(df.head())
 
-#=========================
-# 3. Textbereinigung
-# =========================
+# ==========================================================
+# 3. Überblick über alle Reviews
+# ==========================================================
 
-# Stopwords laden
+# Alle Review-Texte auswählen
+all_reviews = df["text"]
+
+# Erste 10 Reviews anzeigen
+print("\n==============================")
+print("ÜBERBLICK ÜBER ALLE REVIEWS")
+print("==============================")
+print(all_reviews.head(10))
+
+# Anzahl aller Reviews anzeigen
+print("\nGesamtanzahl Reviews:", len(all_reviews))
+
+# ==========================================================
+# 3a. Nur negative Bewertungen analysieren
+# ==========================================================
+
+# Reviews mit 1 oder 2 Sternen auswählen
+negative_reviews = df[df["rating"] <= 2]
+
+# Textspalte extrahieren
+texts = negative_reviews["text"]
+
+# Kontrollausgabe
+print("\n==============================")
+print("NEGATIVE REVIEWS")
+print("==============================")
+print("Anzahl negativer Reviews:", len(texts))
+print(texts.head(10))
+
+# ==========================================================
+# 4. Texte bereinigen
+# ==========================================================
+
+# Englische Stopwords laden
 stop_words = set(stopwords.words("english"))
 
+# Funktion zur Textbereinigung
 def clean_text(text):
-    # Sicherstellen, dass der Text ein String ist
-    text = str(text)
-    
-    # Alles klein schreiben
-    text = text.lower()
+    text = str(text)  # Sicherstellen, dass es Text ist
+    text = text.lower()  # Alles klein schreiben
     
     # URLs entfernen
     text = re.sub(r"http\S+", "", text)
     
-    # Sonderzeichen und Zahlen entfernen
+    # Sonderzeichen, Zahlen und Emojis entfernen
     text = re.sub(r"[^a-zA-Z\s]", "", text)
     
-    # Tokenisierung (Wörter zerlegen)
+    # Wörter trennen
     words = text.split()
     
     # Stopwords entfernen
     words = [word for word in words if word not in stop_words]
     
-    # Wieder zusammenfügen
-    cleaned_text = " ".join(words)
-    
-    return cleaned_text
+    # Wieder zu einem String zusammensetzen
+    return " ".join(words)
 
 # Bereinigung auf alle Texte anwenden
-cleaned_text = texts.apply(clean_text)
+cleaned_texts = texts.apply(clean_text)
 
-# =========================
-# 4. Vektorisierung (2 Methoden)
-# =========================
+# Erste bereinigte Texte anzeigen
+print("\nBeispiel bereinigter Texte:")
+print(cleaned_texts.head())
 
-# ---- Methode 1: Bag of Words ----
-count_vectorizer = CountVectorizer(max_features=1000)  # Max 1000 Wörter
-X_count = count_vectorizer.fit_transform(cleaned_text)  # Transformation
+# ==========================================================
+# 5. Vektorisierung mit 2 Methoden
+# ==========================================================
 
-# ---- Methode 2: TF-IDF ----
+# ---------- Methode 1: Bag of Words ----------
+count_vectorizer = CountVectorizer(max_features=1000)
+X_count = count_vectorizer.fit_transform(cleaned_texts)
+
+# ---------- Methode 2: TF-IDF ----------
 tfidf_vectorizer = TfidfVectorizer(max_features=1000)
-X_tfidf = tfidf_vectorizer.fit_transform(cleaned_text)
+X_tfidf = tfidf_vectorizer.fit_transform(cleaned_texts)
 
-# =========================
-# 5. Themenextraktion (2 Methoden)
-# =========================
+# ==========================================================
+# 6. Themenextraktion mit 2 semantischen Methoden
+# ==========================================================
 
-# ---- Methode 1: LDA (Latent Dirichlet Allocation) ----
-lda = LatentDirichletAllocation(n_components=5, random_state=42)  # 5 Themen
-lda.fit(X_count)  # Modell trainieren
+# ---------- Methode 1: LDA ----------
+lda = LatentDirichletAllocation(n_components=5, random_state=42)
+lda.fit(X_count)
 
-# ---- Methode 2: NMF (Non-negative Matrix Factorization) ----
-nmf = NMF(n_components=5, random_state=42)
-nmf.fit(X_tfidf)
+# ---------- Methode 2: LSA ----------
+lsa = TruncatedSVD(n_components=5, random_state=42)
+lsa.fit(X_tfidf)
 
-# =========================
-# 6. Themen anzeigen
-# =========================
+# ==========================================================
+# 7. Funktion zur Themenanzeige
+# ==========================================================
 
 def print_topics(model, feature_names, no_top_words=10):
     for topic_idx, topic in enumerate(model.components_):
         print(f"\nThema {topic_idx + 1}:")
-        # Top Wörter anzeigen
-        print([feature_names[i] for i in topic.argsort()[-no_top_words:]])
+        
+        # Wichtigste Wörter pro Thema ausgeben
+        top_words = [feature_names[i] for i in topic.argsort()[-no_top_words:]]
+        print(top_words)
 
-# LDA Themen anzeigen
-print("\n=== LDA Themen ===")
+# ==========================================================
+# 8. Ergebnisse ausgeben
+# ==========================================================
+
+print("\n==============================")
+print("LDA THEMEN")
+print("==============================")
 print_topics(lda, count_vectorizer.get_feature_names_out())
 
-# NMF Themen anzeigen
-print("\n=== NMF Themen ===")
-print_topics(nmf, tfidf_vectorizer.get_feature_names_out())
+print("\n==============================")
+print("LSA THEMEN")
+print("==============================")
+print_topics(lsa, tfidf_vectorizer.get_feature_names_out())
 
-# =========================
-# 7. Kurzer Vergleich der Vektorisierung
-# =========================
 
-print("\n=== Vergleich Vektorisierung ===")
-print("Bag of Words zählt nur Häufigkeit von Wörtern.")
-print("TF-IDF gewichtet wichtige Wörter höher und häufige weniger wichtig.")
-
-# =========================
-# 8. Kurze Diskussion der Ergebnisse
-# =========================
-
-print("\n=== Diskussion ===")
-print("""
-- LDA erkennt Themen basierend auf Wortverteilungen (probabilistisch).
-- NMF liefert oft klarere, interpretierbarere Themen.
-- TF-IDF verbessert oft die Qualität der Themen gegenüber Bag of Words.
-- Ergebnisse hängen stark von der Textqualität und Datenmenge ab.
-""")

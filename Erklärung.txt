@@ -1,0 +1,11 @@
+Einmalige Installation der Voraussetzungen in der genutzen Phyton Umgebung mitttels Eingabe in die Konsole, bei mir direkt in VS Code.
+
+Neues Terminal öffnen und dann folgenden Zeilen einfügen:
+
+pip install pandas scikit-learn nltk spacy gensim matplotlib
+
+und dann noch als Sprachmodell:
+python -m spacy download en_core_web_sm
+
+und für die Wordcloud noch:
+pip install wordcloud

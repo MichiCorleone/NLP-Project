@@ -91,7 +91,3 @@ findet sich im Full Abstract der Finalisierungsphase.
   z. B. nur 1-Stern-Reviews zu betrachten
 - **Anzahl Themen:** Parameter `n_components=5` bei LDA und LSA steuert die Anzahl
   extrahierter Themen
-
-## Autor
-
-MichiCorleone – IU Internationale Hochschule, Cyber Security

@@ -18,7 +18,7 @@ nltk.download("stopwords")
 # ==========================================================
 
 # Vollständiger Pfad zu deiner Datei
-file_path = r"C:\Users\hawk1\Dropbox\Uni\02 Projekt Data Analysis\Phyton Code\whatsapp_reviews.csv"
+file_path = "whatsapp_reviews.csv"
 
 # CSV robust laden
 df = pd.read_csv(
